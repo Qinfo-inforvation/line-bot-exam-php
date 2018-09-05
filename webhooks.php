@@ -19,7 +19,7 @@ if (!is_null($events['events'])) {
 			$text = $event['source']['userId'];
 			// Get replyToken
 			$replyToken = $event['replyToken'];
-
+ 
 			// Build message to reply back
 			$messages = [
 				'type' => 'text',
