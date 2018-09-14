@@ -26,7 +26,15 @@ use LINE\LINEBot\MessageBuilder\LocationMessageBuilder;
 use LINE\LINEBot\MessageBuilder\AudioMessageBuilder;
 use LINE\LINEBot\MessageBuilder\VideoMessageBuilder;
 
+use LINE\LINEBot\TemplateActionBuilder;
+use LINE\LINEBot\TemplateActionBuilder\DatetimePickerTemplateActionBuilder;
+use LINE\LINEBot\TemplateActionBuilder\MessageTemplateActionBuilder;
+use LINE\LINEBot\TemplateActionBuilder\PostbackTemplateActionBuilder;
+use LINE\LINEBot\TemplateActionBuilder\UriTemplateActionBuilder;
 
+use LINE\LINEBot\MessageBuilder\TemplateBuilder;
+use LINE\LINEBot\MessageBuilder\TemplateMessageBuilder;
+use LINE\LINEBot\MessageBuilder\TemplateBuilder\ButtonTemplateBuilder;
 if (!is_null($events['events'])) {
 	// Loop through each event
 	foreach ($events['events'] as $event) {
@@ -65,6 +73,77 @@ if (!is_null($events['events'])) {
 			curl_close($ch);
 
 			echo $result . "\r\n";
+		}else{
+			                        // กำหนด action 4 ปุ่ม 4 ประเภท
+									$actionBuilder = array(
+										new MessageTemplateActionBuilder(
+											'Message Template',// ข้อความแสดงในปุ่ม
+											'This is Text' // ข้อความที่จะแสดงฝั่งผู้ใช้ เมื่อคลิกเลือก
+										),
+										new UriTemplateActionBuilder(
+											'Uri Template', // ข้อความแสดงในปุ่ม
+											'https://www.ninenik.com'
+										),
+										new DatetimePickerTemplateActionBuilder(
+											'Datetime Picker', // ข้อความแสดงในปุ่ม
+											http_build_query(array(
+												'action'=>'reservation',
+												'person'=>5
+											)), // ข้อมูลที่จะส่งไปใน webhook ผ่าน postback event
+											'datetime', // date | time | datetime รูปแบบข้อมูลที่จะส่ง ในที่นี้ใช้ datatime
+											substr_replace(date("Y-m-d H:i"),'T',10,1), // วันที่ เวลา ค่าเริ่มต้นที่ถูกเลือก
+											substr_replace(date("Y-m-d H:i",strtotime("+5 day")),'T',10,1), //วันที่ เวลา มากสุดที่เลือกได้
+											substr_replace(date("Y-m-d H:i"),'T',10,1) //วันที่ เวลา น้อยสุดที่เลือกได้
+										),      
+										new PostbackTemplateActionBuilder(
+											'Postback', // ข้อความแสดงในปุ่ม
+											http_build_query(array(
+												'action'=>'buy',
+												'item'=>100
+											)) // ข้อมูลที่จะส่งไปใน webhook ผ่าน postback event
+				//                          'Postback Text'  // ข้อความที่จะแสดงฝั่งผู้ใช้ เมื่อคลิกเลือก
+										),      
+									);
+									$imageUrl = 'https://www.mywebsite.com/imgsrc/photos/w/simpleflower';
+									$replyData = new TemplateMessageBuilder('Button Template',
+										new ButtonTemplateBuilder(
+												'button template builder', // กำหนดหัวเรื่อง
+												'Please select', // กำหนดรายละเอียด
+												$imageUrl, // กำหนด url รุปภาพ
+												$actionBuilder  // กำหนด action object
+										)
+									); 
+									
+									$text = $event['source']['userId'];
+									//['userId'];
+								// Get replyToken
+								$replyToken = $event['replyToken'];
+					 
+								// Build message to reply back
+								$messages = [
+									'type' => 'text',
+									'text' => $text
+								];
+					
+								// Make a POST Request to Messaging API to reply to sender
+								$url = 'https://api.line.me/v2/bot/message/reply';
+								$data = [
+									'replyToken' => $replyToken,
+									'messages' => [$replyData],
+								];
+								$post = json_encode($data);
+								$headers = array('Content-Type: application/json', 'Authorization: Bearer ' . $access_token);
+					
+								$ch = curl_init($url);
+								curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+								curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+								curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+								curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+								curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+								$result = curl_exec($ch);
+								curl_close($ch);
+					
+								echo $result . "\r\n";
 		}
 	}
 }
